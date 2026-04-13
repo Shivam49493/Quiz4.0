@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>QuizMaster Cloud | Persistent Quizzes Anywhere</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+<!-- Role selection screen -->
+<div id="screen-role" class="screen active">
+  <div style="text-align:center;padding:8px 0 12px">
+    <div class="logo" style="width:56px;height:56px;margin:0 auto 12px;font-size:26px;">Q</div>
+    <h1 style="font-size:26px;font-weight:600">QuizMaster Cloud</h1>
+    <p style="font-size:14px;margin-top:5px">Persistent storage · Access anywhere</p>
+    <div id="cloudStatusBadge" style="margin-top: 10px;"></div>
+  </div>
+  <div class="role-grid">
+    <div class="role-card" onclick="quizApp.showLogin('admin')">
+      <div class="role-icon" style="background:#EEEDFE">👑</div>
+      <p style="font-weight:600">Admin</p>
+      <p style="font-size:12px">Upload & manage quizzes (cloud saved)</p>
+    </div>
+    <div class="role-card" onclick="quizApp.showLogin('student')">
+      <div class="role-icon" style="background:#E1F5EE">🎓</div>
+      <p style="font-weight:600">Student</p>
+      <p style="font-size:12px">Take quizzes from anywhere</p>
+    </div>
+  </div>
+</div>
+
+<!-- Login screen -->
+<div id="screen-login" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">Q</div>
+      <h1 id="loginTitle">Sign in</h1>
+    </div>
+    <button class="btn-sm btn" onclick="quizApp.showScreen('screen-role')">← Back</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <span class="form-label">Username</span>
+        <input type="text" id="loginUser" placeholder="Username">
+      </div>
+      <div>
+        <span class="form-label">Password</span>
+        <input type="password" id="loginPass" placeholder="Password">
+        <span class="form-hint" id="loginHint"></span>
+      </div>
+      <div id="loginError" style="display:none;color:#A32D2D;background:#FCEBEB;padding:10px;border-radius:12px"></div>
+      <button class="btn btn-primary" onclick="quizApp.doLogin()">Sign in →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin dashboard -->
+<div id="screen-admin" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">Q</div>
+      <div>
+        <h1>Admin panel</h1>
+        <span class="badge badge-purple">admin</span>
+      </div>
+    </div>
+    <button class="btn-sm" onclick="quizApp.logout()">Sign out</button>
+  </div>
+  <div class="tab-row">
+    <div class="tab active" onclick="quizApp.switchTab('tab-upload','tab-manage','tab-stats')" id="tab-upload-btn">Upload</div>
+    <div class="tab" onclick="quizApp.switchTab('tab-manage','tab-upload','tab-stats')" id="tab-manage-btn">Manage</div>
+    <div class="tab" onclick="quizApp.switchTab('tab-stats','tab-upload','tab-manage')" id="tab-stats-btn">Stats</div>
+  </div>
+  <div id="tab-upload" class="tab-panel active">
+    <div class="upload-zone card" id="adminUploadZone">
+      <div style="font-size:32px;">☁️📁</div>
+      <p style="font-weight:500">Upload quiz JSON to cloud</p>
+      <p style="font-size:12px">Drag & drop or click · auto-syncs to database</p>
+      <input type="file" id="adminFileInput" accept=".json" style="display:none">
+    </div>
+    <div class="card">
+      <p style="font-weight:500;margin-bottom:8px">JSON format</p>
+      <pre style="font-size:11px">[{"topic":"Science","questions":[{"question":"...","options":[],"answer":"..."}]}]</pre>
+    </div>
+    <button class="btn btn-primary" onclick="quizApp.loadSampleToCloud()">📚 Load sample & sync to cloud</button>
+    <button class="btn" style="margin-top:8px" onclick="quizApp.syncFromCloud()">🔄 Sync from cloud</button>
+  </div>
+  <div id="tab-manage" class="tab-panel">
+    <div id="adminTopicList"><div class="card">Loading cloud data...</div></div>
+  </div>
+  <div id="tab-stats" class="tab-panel">
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-val" id="statTopics">0</div><div class="stat-lbl">Topics</div></div>
+      <div class="stat"><div class="stat-val" id="statQuestions">0</div><div class="stat-lbl">Questions</div></div>
+      <div class="stat"><div class="stat-val" id="statAttempts">0</div><div class="stat-lbl">Attempts</div></div>
+    </div>
+    <div class="card">
+      <p style="font-weight:500;margin-bottom:12px">Student attempts</p>
+      <div id="attemptLog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Student dashboard -->
+<div id="screen-student" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo" style="background:#0F6E56">Q</div>
+      <div>
+        <h1>My quizzes</h1>
+        <span class="badge badge-teal" id="studentNameBadge">student</span>
+      </div>
+    </div>
+    <button class="btn-sm" onclick="quizApp.logout()">Sign out</button>
+  </div>
+  <div id="studentTopicList"></div>
+  <div class="card">
+    <p style="font-weight:500;margin-bottom:12px">📜 My history</p>
+    <div id="studentHistory"></div>
+  </div>
+</div>
+
+<!-- Quiz settings -->
+<div id="screen-quiz-settings" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-sm" onclick="quizApp.showScreen('screen-student')">← Back</button>
+      <h1 id="settingsTopicName">Quiz settings</h1>
+    </div>
+  </div>
+  <div class="card">
+    <div class="settings-row" style="display:flex;justify-content:space-between;padding:10px 0">
+      <span>Questions</span>
+      <select id="qCount">
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="30">30</option>
+        <option value="0">All</option>
+      </select>
+    </div>
+    <div class="settings-row" style="display:flex;justify-content:space-between;padding:10px 0">
+      <span>Timer per Q</span>
+      <select id="timerSel">
+        <option value="0">Off</option>
+        <option value="30" selected>30s</option>
+        <option value="60">60s</option>
+      </select>
+    </div>
+    <div class="settings-row" style="display:flex;justify-content:space-between;padding:10px 0">
+      <span>Shuffle</span>
+      <select id="shuffleSel">
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-teal" onclick="quizApp.startQuiz()">🚀 Start quiz</button>
+</div>
+
+<!-- Quiz gameplay -->
+<div id="screen-quiz" class="screen">
+  <div style="display:flex;justify-content:space-between">
+    <span class="badge badge-teal" id="quizTopicBadge"></span>
+    <span id="timerDisplay" class="timer" style="display:none"></span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressBar"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:13px">
+    <span id="qNum"></span>
+    <span id="scoreDisplay">Score: 0</span>
+  </div>
+  <div class="card">
+    <p style="font-size:17px;font-weight:500" id="qText"></p>
+  </div>
+  <div id="optionsContainer"></div>
+  <div id="feedbackBox" class="feedback" style="display:none"></div>
+  <button class="btn btn-primary" id="nextBtn" style="display:none" onclick="quizApp.nextQuestion()">Next →</button>
+</div>
+
+<!-- Results screen -->
+<div id="screen-results" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo" style="background:#0F6E56">Q</div>
+      <h1>Quiz complete</h1>
+    </div>
+  </div>
+  <div class="card" style="text-align:center">
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#0F6E56" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" id="scoreArc" transform="rotate(-90 50 50)"/>
+      <text x="50" y="46" text-anchor="middle" font-size="20" font-weight="600" id="scorePct"></text>
+      <text x="50" y="60" text-anchor="middle" font-size="10">score</text>
+    </svg>
+    <p id="resultMsg" style="margin-top:12px;font-size:18px;font-weight:600"></p>
+    <p id="resultSub"></p>
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-val" id="rCorrect">0</div><div class="stat-lbl">Correct</div></div>
+    <div class="stat"><div class="stat-val" id="rWrong">0</div><div class="stat-lbl">Wrong</div></div>
+    <div class="stat"><div class="stat-val" id="rTime">0s</div><div class="stat-lbl">Avg time</div></div>
+  </div>
+  <div class="action-row" style="display:flex;gap:10px">
+    <button class="btn btn-teal" onclick="quizApp.retryQuiz()">Retry</button>
+    <button class="btn" onclick="quizApp.showScreen('screen-student')">All topics</button>
+  </div>
+  <button class="btn" onclick="quizApp.showReview()">Review answers</button>
+</div>
+
+<!-- Review screen -->
+<div id="screen-review" class="screen">
+  <div style="display:flex;gap:12px;align-items:center">
+    <button class="btn-sm btn" onclick="quizApp.showScreen('screen-results')">← Back</button>
+    <h2>Review answers</h2>
+  </div>
+  <div id="reviewContainer"></div>
+</div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
