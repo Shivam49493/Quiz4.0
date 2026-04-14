@@ -3,7 +3,7 @@ const quizApp = (function() {
   // ============= CLOUD STORAGE using JSONBin.io (Free persistent cloud database) =============
   const CLOUD_BIN_ID_KEY = 'quizmaster_cloud_bin_id';
   // Note: Replace with your own free JSONBin.io API key for production
-  const API_KEY = '$2a$10$examplekeyreplacewithyourownjsonbinapikey';
+  const API_KEY = '$2a$10$lboyp2vqdqNMN.H2wlie9eoqaJsK0ML0eHOXaBpzecRLAcxAq8CUC';
   
   // Application state
   let savedQuizData = [];
